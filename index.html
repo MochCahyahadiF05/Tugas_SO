@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>File Manager</title>
+    <style>
+        button.delete-btn {
+            color: white;
+            background-color: red;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        button.delete-btn:hover {
+            background-color: darkred;
+        }
+
+        button.rename-btn {
+            color: white;
+            background-color: blue;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        button.rename-btn:hover {
+            background-color: darkblue;
+        }
+
+        #fileSizeTotal {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .rename-input {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Manager</h1>
+    <input type="file" id="fileInput">
+    <button id="uploadButton">Upload</button>
+    <div id="progress"></div>
+    <h2>Uploaded Files</h2>
+    <ul id="fileList"></ul>
+    <div id="fileSizeTotal">Total Size: 0 bytes</div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const progress = document.getElementById('progress');
+        const fileList = document.getElementById('fileList');
+        const fileSizeTotal = document.getElementById('fileSizeTotal');
+
+        function fetchFiles() {
+            fetch('/files')
+                .then(response => response.json())
+                .then(files => {
+                    fileList.innerHTML = '';
+                    let totalSize = 0;
+
+                    files.forEach(file => {
+                        totalSize += file.size;
+
+                        const li = document.createElement('li');
+                        li.textContent = `${file.name} - ${file.size} bytes`;
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'Delete';
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.onclick = () => deleteFile(file.name);
+
+                        const renameBtn = document.createElement('button'); // Membuat tombol Rename
+                        renameBtn.textContent = 'Rename';//Memberi label "Rename" pada tombol
+                        renameBtn.className = 'rename-btn';//Menambahkan class CSS "rename-btn" agar tombol memiliki gaya tertentu
+                        renameBtn.onclick = () => renameFile(file.name, li);//Mengatur event klik tombol untuk memanggil fungsi renameFile
+
+                        li.appendChild(deleteBtn);
+                        li.appendChild(renameBtn);//Menambahkan tombol Rename ke dalam elemen <li>
+                        fileList.appendChild(li);
+                    });
+
+                    fileSizeTotal.textContent = `Total Size: ${totalSize} bytes`;
+                });
+        }
+
+        function deleteFile(fileName) {
+            fetch(`/delete/${fileName}`, { method: 'POST' })
+                .then(() => fetchFiles())
+                .catch(err => console.error(err));
+        }
+
+        function renameFile(oldName, listItem) {
+            const renameInput = document.createElement('input'); // Membuat input teks untuk memasukkan nama baru
+            renameInput.type = 'text';
+            renameInput.placeholder = 'New name'; // Menampilkan teks petunjuk "New name"
+            renameInput.className = 'rename-input'; // Menambahkan class CSS untuk styling
+
+            const confirmBtn = document.createElement('button'); // Membuat tombol konfirmasi
+            confirmBtn.textContent = 'Confirm'; // Memberi label "Confirm" pada tombol
+            confirmBtn.className = 'rename-btn'; // Menambahkan class CSS "rename-btn"
+
+            confirmBtn.onclick = () => {
+                const newName = renameInput.value;
+                if (!newName) {
+                    alert('New name cannot be empty'); // Jika input kosong, tampilkan peringatan
+                    return;
+                }
+
+                fetch('/rename', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ oldName, newName }) // Mengirim data ke server untuk mengganti nama file
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to rename file');
+                    }
+                    fetchFiles(); // Memperbarui daftar file setelah perubahan nama
+                })
+                .catch(err => console.error(err));
+            };
+
+            listItem.appendChild(renameInput); // Menambahkan input teks ke dalam elemen <li>
+            listItem.appendChild(confirmBtn); // Menambahkan tombol konfirmasi ke dalam elemen <li>
+        }
+
+        uploadButton.onclick = () => {
+            const file = fileInput.files[0];
+            if (!file) {
+                progress.textContent = 'No file selected!';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                fetch('/upload', {
+                    method: 'POST',
+                    body: reader.result
+                }).then(() => {
+                    progress.textContent = 'File uploaded successfully!';
+                    fetchFiles();
+                }).catch(err => {
+                    progress.textContent = 'Failed to upload file.';
+                    console.error(err);
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        fetchFiles();
+    </script>
+</body>
+</html>
