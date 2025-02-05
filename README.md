@@ -161,3 +161,18 @@ Menghapus file tertentu dari server.
 
 ## Lisensi
 Proyek ini dilisensikan di bawah lisensi MIT. Anda bebas menggunakan, memodifikasi, dan mendistribusikan proyek ini sesuai kebutuhan.
+
+
+## VaultSync - File Rename Feature
+
+### Fitur Baru
+1. **Rename File**:
+   - Endpoint: `POST /rename`
+   - **Deskripsi**: Mengganti nama file yang diunggah.
+   - **Parameter**:
+     - `oldName`: Nama file lama (string).
+     - `newName`: Nama file baru (string).
+   - **Respons**:
+     - `200`: Berhasil mengganti nama file.
+     - `404`: File tidak ditemukan.
+     - `500`: Gagal mengganti nama file.
