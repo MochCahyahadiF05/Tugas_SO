@@ -1,7 +1,5 @@
 # Hello World
 
-# Hello World
-
 ## Nama : Mochammad Cahyahadi Fadhlurrahman
 ## Kelas: TIF RP 23D
 ## NIM  :23552011347
